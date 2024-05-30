@@ -27,8 +27,11 @@ st.markdown(
 st.header("#To-do")
 
 markdown = """
-1. Create the dashboard
-2. Add a new app to the `pages/` directory with an emoji in the file name, e.g., `1_🚀_Chart.py`.
+1. Create the summary page (Figma Design)
+2. Create the file upload page?
+3. Create the review summarizer page n word cloud page?
+
+To Add a new app to the `pages/` directory with an emoji in the file name, e.g., `1_🚀_Chart.py`.
 
 """
 
