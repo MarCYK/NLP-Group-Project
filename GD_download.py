@@ -17,7 +17,7 @@ def download_file_from_google_drive(id, destination):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
 
-    URL = "https://docs.google.com/uc?export=download"
+    URL = "https://drive.usercontent.google.com/download?id=1-8Od2aCrZ2vGMHA5wScJapXrgJcvYO_C&export=download&confirm=t"
 
     session = requests.Session()
 

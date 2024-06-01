@@ -6,6 +6,8 @@ from pathlib import Path
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from torch.utils.data import DataLoader
+from datasets import Dataset
+from safetensors.torch import load_model
 
 st.set_page_config(page_title = 'Beneficiary Feedback', 
     layout='wide',
@@ -20,32 +22,31 @@ st.title("Beneficiary Feedback")
 device = torch.device('cpu')
 
 # To connect sentiment analysis model
-# https://drive.google.com/file/d/1-Uup-3WA2jVHtrwyekuzy1CL8yZxIgr1/view?usp=sharing
-cloud_model_location = "1-Uup-3WA2jVHtrwyekuzy1CL8yZxIgr1"
+# https://drive.google.com/file/d/1-8Od2aCrZ2vGMHA5wScJapXrgJcvYO_C/view?usp=sharing
+cloud_model_location = "1-8Od2aCrZ2vGMHA5wScJapXrgJcvYO_C"
 
-model_name = "lxyuan/distilbert-base-multilingual-cased-sentiments-student"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForSequenceClassification.from_pretrained(model_name)
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-
-def load_model():
+def install_model():
 
     save_dest = Path('model')
     save_dest.mkdir(exist_ok=True)
     
-    f_checkpoint = Path("model/model.pt")
-
+    f_checkpoint = Path("model/model.safetensors")
+        
     if not f_checkpoint.exists():
         with st.spinner("Downloading model... this may take awhile! \n Don't stop it!"):
             from GD_download import download_file_from_google_drive
             download_file_from_google_drive(cloud_model_location, f_checkpoint)
     
-    model = torch.load(f_checkpoint, map_location=device)
-    return model
+    model_name = "lxyuan/distilbert-base-multilingual-cased-sentiments-student"
+    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=5, ignore_mismatched_sizes=True)
+    load_model(model, "model/model.safetensors")
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+    return tokenizer, model
 
 # Define a function to prepare the dataset
 def prepare_dataset(dataframe, tokenizer, batch_size=8):
-    dataset = st.session_state.beneficiary_df
+    dataset = Dataset.from_pandas(dataframe)
     dataset = dataset.map(tokenizer, input_columns="Review", fn_kwargs={"padding": "max_length", "truncation": True, "max_length": 512})
     dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
     dataloader = DataLoader(dataset, batch_size=batch_size)
@@ -66,26 +67,23 @@ def make_predictions(model, dataloader, device):
 
     return predictions
 
-def summarize_text(text, max_length=130, min_length=30):
-    inputs = tokenizer.encode("summarize: " + text, return_tensors="pt", max_length=512, truncation=True)
-    summary_ids = model.generate(inputs, max_length=max_length, min_length=min_length, length_penalty=2.0, num_beams=4, early_stopping=True)
-    return tokenizer.decode(summary_ids[0], skip_special_tokens=True)
-
-def preprocess_dataframe(df):
-    # Define a mapping dictionary for label conversion
-    label_mapping = {
-        "Excellent (5/5)": 4,
-        "Good (4/5)": 3,
-        "Neutral (3/5)": 2,
-        "Poor (2/5)": 1,
-        "Very poor (1/5)": 0
-    }
-    # Apply label conversion to the dataframe
-    df['labels'] = df['Sentiment'].map(label_mapping)
-    return df
-
 # Load the model and tokenizer
-trained_model = load_model()
+tokenizer, model = install_model()
+
+df = st.session_state.beneficiary_df
+
+df = prepare_dataset(df, tokenizer)
+
+predictions = make_predictions(model, df, device)
+
+results_df = pd.DataFrame({
+    'Review': st.session_state.beneficiary_df['Review'],
+    'Predicted Sentiment': [pred + 1 for pred in predictions]  # Adjust label scale if necessary
+})
+
+st.dataframe(results_df)
+
+
 
 
 
