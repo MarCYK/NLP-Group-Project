@@ -15,11 +15,11 @@ st.sidebar.info(markdown)
 logo = "images\SEKRUM Logo.jpg"
 st.sidebar.image(logo)
 
-# # Initialize session state
-# if 'beneficiary_df' not in st.session_state:
-#     st.session_state.beneficiary_df = pd.DataFrame()
-# if 'volunteer_df' not in st.session_state:
-#     st.session_state.volunteer_df = pd.DataFrame()
+# Initialize session state
+if 'beneficiary_df' not in st.session_state:
+    st.session_state.beneficiary_df = pd.DataFrame()
+if 'volunteer_df' not in st.session_state:
+    st.session_state.volunteer_df = pd.DataFrame()
 
 # Customize page title
 st.title("Upload Feedback Data")

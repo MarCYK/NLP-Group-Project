@@ -4,11 +4,14 @@ import numpy as np
 from streamlit_card import card
 import hydralit_components as hc
 
-# st.dataframe(st.session_state.beneficiary_df)
-
 st.set_page_config(page_title = 'Beneficiary Feedback', 
     layout='wide',
     page_icon='🫂')
+
+if st.session_state.beneficiary_df.empty:
+    st.write("Please upload a file to get started.")
+else:
+    st.dataframe(st.session_state.beneficiary_df)
 
 st.title("Beneficiary Feedback")
 

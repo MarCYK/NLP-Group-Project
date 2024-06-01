@@ -7,6 +7,16 @@ st.set_page_config(page_title = 'Summarization',
     layout='wide',
     page_icon='📝')
 
+# Initialize session state
+if st.session_state.beneficiary_df.empty:
+    st.write("Please upload a file to get started.")
+else:
+    st.dataframe(st.session_state.beneficiary_df)
+if st.session_state.volunteer_df.empty:
+    st.write("Please upload a file to get started.")
+else:
+    st.dataframe(st.session_state.volunteer_df)
+
 
 # Load the model and tokenizer
 model_name = "t5-base"
