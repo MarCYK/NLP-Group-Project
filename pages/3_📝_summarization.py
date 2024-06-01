@@ -3,6 +3,11 @@ import pandas as pd
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
 
+st.set_page_config(page_title = 'Summarization', 
+    layout='wide',
+    page_icon='📝')
+
+
 # Load the model and tokenizer
 model_name = "t5-base"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -30,7 +35,9 @@ def preprocess_dataframe(df):
 
 # Streamlit app
 st.title("Feedback Summarizer")
-uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
+# uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
+
+uploaded_file = st.session_state.uploaded_file
 
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
