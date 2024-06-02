@@ -26,6 +26,27 @@ device = torch.device('cpu')
 cloud_model_location = "1-8Od2aCrZ2vGMHA5wScJapXrgJcvYO_C"
 
 def install_model():
+    # # Load the original model with 3 labels
+    # original_model_name = "lxyuan/distilbert-base-multilingual-cased-sentiments-student"
+    # original_model = AutoModelForSequenceClassification.from_pretrained(original_model_name, num_labels=3)
+
+    # # Modify the model to have 5 labels
+    # model = AutoModelForSequenceClassification.from_pretrained(original_model_name, num_labels=5)
+
+    # # Copy the weights from the original model, ignoring the classifier weights
+    # for name, param in original_model.named_parameters():
+    #     if "classifier" not in name:
+    #         model.state_dict()[name].copy_(param)
+
+    # # Initialize the new classifier weights
+    # model.classifier.weight.data.normal_(mean=0.0, std=model.config.initializer_range)
+    # model.classifier.bias.data.zero_()
+
+    # # Save the modified model
+    # modified_model_path = "modified_model"
+    # model.save_pretrained(modified_model_path)
+    # tokenizer = AutoTokenizer.from_pretrained(original_model_name)
+    # tokenizer.save_pretrained(modified_model_path)
 
     save_dest = Path('model')
     save_dest.mkdir(exist_ok=True)
@@ -36,12 +57,15 @@ def install_model():
         with st.spinner("Downloading model... this may take awhile! \n Don't stop it!"):
             from GD_download import download_file_from_google_drive
             download_file_from_google_drive(cloud_model_location, f_checkpoint)
+            print("Download complete!")
     
     model_name = "lxyuan/distilbert-base-multilingual-cased-sentiments-student"
+    # model_name = "path/to/modified_model"
     model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=5, ignore_mismatched_sizes=True)
+
     load_model(model, "model/model.safetensors")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-
+    print("model loaded...")
     return tokenizer, model
 
 # Define a function to prepare the dataset
@@ -57,13 +81,19 @@ def make_predictions(model, dataloader, device):
     model.to(device)
     model.eval()
     predictions = []
+    # Create a placeholder for the batch progress
+    progress_text = st.empty()
 
-    with torch.no_grad():
-        for batch in dataloader:
-            inputs = {k: v.to(device) for k, v in batch.items()}
-            outputs = model(**inputs)
-            logits = outputs.logits
-            predictions.extend(torch.argmax(logits, dim=-1).tolist())
+    with st.spinner("NLP is NLPing... this may take awhile! \n Don't stop it!"):
+        with torch.no_grad():
+            for batch in dataloader:
+                inputs = {k: v.to(device) for k, v in batch.items()}
+                outputs = model(**inputs)
+                logits = outputs.logits
+                predictions.extend(torch.argmax(logits, dim=-1).tolist())
+                # Update the placeholder text
+                progress_text.text(f'{len(predictions)}\{len(df)}')
+
 
     return predictions
 
@@ -80,7 +110,7 @@ results_df = pd.DataFrame({
     'Review': st.session_state.beneficiary_df['Review'],
     'Predicted Sentiment': [pred + 1 for pred in predictions]  # Adjust label scale if necessary
 })
-
+st.session_state.beneficiary_results_df = results_df
 st.dataframe(results_df)
 
 

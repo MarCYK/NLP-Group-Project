@@ -12,6 +12,9 @@ if 'beneficiary_df' not in st.session_state:
 if 'volunteer_df' not in st.session_state:
     st.session_state.volunteer_df = pd.DataFrame()
 
+# st.write(st.session_state.beneficiary_df)
+# st.write(len(st.session_state.beneficiary_df.columns))
+
 # Load the model and tokenizer
 model_name = "t5-base"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -50,8 +53,8 @@ if feedbackID == "Beneficiary":
     if not st.session_state.beneficiary_df.empty:
         st.write("Beneficiary Feedback DataFrame:")
         st.write(st.session_state.beneficiary_file_name)
-        df = st.session_state.beneficiary_df
-        df = preprocess_dataframe(df)
+        df = st.session_state.beneficiary_results_df
+        # df = preprocess_dataframe(df)
     else:
         st.write("Please upload a beneficiary feedback file on the main page to get started.")
         df = None
@@ -60,26 +63,35 @@ elif feedbackID == "Volunteer":
     if not st.session_state.volunteer_df.empty:
         st.write("Volunteer Feedback DataFrame:")
         st.write(st.session_state.volunteer_file_name)
-        df = st.session_state.volunteer_df
-        df = preprocess_dataframe(df)
+        df = st.session_state.volunteer_results_df
+        # df = preprocess_dataframe(df)
     else:
         st.write("Please upload a volunteer feedback file on the main page to get started.")
         df = None
 
 if df is not None:
-    if 'labels' not in df.columns:
-        st.error("The 'labels' column is missing from the DataFrame after preprocessing.")
+    if 'Predicted Sentiment' not in df.columns:
+        st.error("The 'Predicted Sentiment' column is missing from the DataFrame after preprocessing.")
     else:
         st.write(df.head())
 
-        sentiment = st.selectbox("Select sentiment", ("Positive", "Neutral", "Negative"))
+        # sentiment = st.selectbox("Select sentiment", ("Positive", "Neutral", "Negative"))
+        # sentiment_mapping = {
+        #     "Positive": [4, 3],
+        #     "Neutral": [2],
+        #     "Negative": [1, 0]
+        # }
+
+        # The new model seems to predict negative feedback as "Neutral", so even when choosing
+        # "Neutral" sentiment to be summarized, it will still say like "The program suck facking ass" (rather than before it's more like "It's decent ig")
+        # The lazy fix is just make two sentiment to be summarized; "Positive", "Negative"
+        sentiment = st.selectbox("Select sentiment", ("Positive", "Negative"))
         sentiment_mapping = {
             "Positive": [4, 3],
-            "Neutral": [2],
-            "Negative": [1, 0]
+            "Negative": [2, 1, 0]
         }
 
-        filtered_df = df[df['labels'].isin(sentiment_mapping[sentiment])]
+        filtered_df = df[df['Predicted Sentiment'].isin(sentiment_mapping[sentiment])]
         reviews = filtered_df['Review'].tolist()
         combined_reviews = " ".join(reviews)
 
