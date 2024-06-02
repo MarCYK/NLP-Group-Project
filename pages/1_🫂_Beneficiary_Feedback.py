@@ -2,6 +2,12 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import hydralit_components as hc
+from pathlib import Path
+import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from torch.utils.data import DataLoader
+from datasets import Dataset
+from safetensors.torch import load_model
 
 st.set_page_config(page_title = 'Beneficiary Feedback', 
     layout='wide',
@@ -9,41 +15,125 @@ st.set_page_config(page_title = 'Beneficiary Feedback',
 
 if st.session_state.beneficiary_df.empty:
     st.write("Please upload a file to get started.")
-else:
-    st.dataframe(st.session_state.beneficiary_df)
 
 st.title("Beneficiary Feedback")
 
+# Streamlit sharing is CPU only
+device = torch.device('cpu')
+
 # To connect sentiment analysis model
+# https://drive.google.com/file/d/1-8Od2aCrZ2vGMHA5wScJapXrgJcvYO_C/view?usp=sharing
+cloud_model_location = "1-8Od2aCrZ2vGMHA5wScJapXrgJcvYO_C"
+
+def install_model():
+
+    save_dest = Path('model')
+    save_dest.mkdir(exist_ok=True)
+    
+    f_checkpoint = Path("model/model.safetensors")
+        
+    if not f_checkpoint.exists():
+        with st.spinner("Downloading model... this may take awhile! \n Don't stop it!"):
+            from GD_download import download_file_from_google_drive
+            download_file_from_google_drive(cloud_model_location, f_checkpoint)
+    
+    model_name = "lxyuan/distilbert-base-multilingual-cased-sentiments-student"
+    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=5, ignore_mismatched_sizes=True)
+    load_model(model, "model/model.safetensors")
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+    return tokenizer, model
+
+# Define a function to prepare the dataset
+def prepare_dataset(dataframe, tokenizer, batch_size=8):
+    dataset = Dataset.from_pandas(dataframe)
+    dataset = dataset.map(tokenizer, input_columns="Review", fn_kwargs={"padding": "max_length", "truncation": True, "max_length": 512})
+    dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
+    dataloader = DataLoader(dataset, batch_size=batch_size)
+    return dataloader
+
+# Define a function to make predictions
+def make_predictions(model, dataloader, device):
+    model.to(device)
+    model.eval()
+    predictions = []
+
+    with torch.no_grad():
+        for batch in dataloader:
+            inputs = {k: v.to(device) for k, v in batch.items()}
+            outputs = model(**inputs)
+            logits = outputs.logits
+            predictions.extend(torch.argmax(logits, dim=-1).tolist())
+
+    return predictions
+
+# Load the model and tokenizer
+tokenizer, model = install_model()
+
+df = st.session_state.beneficiary_df
+
+df = prepare_dataset(df, tokenizer)
+
+predictions = make_predictions(model, df, device)
+
+results_df = pd.DataFrame({
+    'Review': st.session_state.beneficiary_df['Review'],
+    'Predicted Sentiment': [pred + 1 for pred in predictions]  # Adjust label scale if necessary
+})
+
+st.dataframe(results_df)
+
+
+
 
 
 #can apply customisation to almost all the properties of the card, including the progress bar
-theme_bad = {'bgcolor': '#FFF0F0','title_color': 'red','content_color': 'red','icon_color': 'red', 'icon': 'fa fa-times-circle'}
-theme_neutral = {'bgcolor': '#f9f9f9','title_color': 'orange','content_color': 'orange','icon_color': 'orange', 'icon': 'fa fa-question-circle'}
-theme_good = {'bgcolor': '#EFF8F7','title_color': 'green','content_color': 'green','icon_color': 'green', 'icon': 'fa fa-check-circle'}
+theme_bad = {'bgcolor': '#FFF0F0','title_color': 'red','content_color': 'red','icon_color': 'red', 'icon': 'fa fa-thumbs-down', 'progress_color': 'red'}
+theme_neutral = {'bgcolor': '#FFF4EF','title_color': 'orange','content_color': 'orange','icon_color': 'orange', 'icon': 'fa fa-question-circle', 'progress_color': 'orange'}
+theme_good = {'bgcolor': '#EFF8F7','title_color': 'green','content_color': 'green','icon_color': 'green', 'icon': 'fa fa-thumbs-up', 'progress_color': 'green'}
+theme_review = {'bgcolor': '#FFFFFF','title_color': 'black','content_color': 'black','icon_color': 'black', 'icon': 'fa fa-envelope-open-text', 'progress_color': 'black'}
 
 ### top row 
-first_kpi, second_kpi, third_kpi = st.columns(3)
+first_kpi, second_kpi, third_kpi, fourth_kpi = st.columns(4)
 
 with first_kpi:
-    st.markdown("**Number of Reviews**")
     number1 = st.session_state.beneficiary_df['Review'].count()
-    st.markdown(f"<h1 style='text-align: center; color: black;'>{number1}</h1>", unsafe_allow_html=True)
     hc.info_card(title='Number of Reviews', 
-                 content="test", 
-                 bar_value=77,
-                 theme_override=theme_neutral)
+                 content=number1.__str__(), 
+                 bar_value=number1.__str__(),
+                 theme_override=theme_review,
+                 title_text_size='20px',
+                 icon_size='30px')
 
 with second_kpi:
-    st.markdown("**Number of Positive Reviews**")
     number2 = 222 
-    st.markdown(f"<h1 style='text-align: center; color: green;'>{number2}</h1>", unsafe_allow_html=True)
+    sum2 = number2/number1 * 100
+    hc.info_card(title='Number of Positive Reviews', 
+                 content=number2.__str__(), 
+                 bar_value= sum2,
+                 theme_override=theme_good,
+                 title_text_size='20px',
+                 icon_size='30px',)
 
 with third_kpi:
-    st.markdown("**Number of Negative Reviews**")
-    number3 = 333 
-    st.markdown(f"<h1 style='text-align: center; color: red;'>{number3}</h1>", unsafe_allow_html=True)
+    number3 = 333
+    sum3 = number3/number1 * 100
+    hc.info_card(title='Number of Neutral Reviews', 
+                content=number3.__str__(), 
+                bar_value=sum3,
+                theme_override=theme_neutral,
+                title_text_size='20px',
+                icon_size='30px',)
 
+with fourth_kpi:
+    number3 = 333
+    sum3 = number3/number1 * 100
+    hc.info_card(title='Number of Negative Reviews', 
+                content=number3.__str__(), 
+                bar_value=sum3,
+                theme_override=theme_bad,
+                title_text_size='20px',
+                icon_size='30px',)
 
 st.markdown("<hr/>", unsafe_allow_html=True)
 

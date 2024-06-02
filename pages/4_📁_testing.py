@@ -98,3 +98,36 @@ with first_chart:
 with second_chart:
     chart_data = pd.DataFrame(np.random.randn(2000, 3),columns=['a', 'b', 'c'])
     st.line_chart(chart_data)
+
+
+
+import streamlit as st
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+
+# Create text
+topic1 = 'law,contract,fees'
+topic2 = 'students,school,exams'
+topic3 = 'pastor,church,money'
+
+topic = st.selectbox('select topic',['topic1','topic2','topic3'])
+
+# Create and generate a word cloud image:
+def create_wordcloud(topic):
+    if topic == 'topic1':
+        topic = topic1
+    elif topic == 'topic2':
+        topic = topic2
+    else:
+        topic = topic3
+
+    wordcloud = WordCloud().generate(topic)
+    return wordcloud
+
+wordcloud = create_wordcloud(topic)
+
+# Display the generated image:
+fig, ax = plt.subplots(figsize = (12, 8))
+ax.imshow(wordcloud)
+plt.axis("off")
+st.pyplot(fig)

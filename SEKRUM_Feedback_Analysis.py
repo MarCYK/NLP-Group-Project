@@ -58,7 +58,7 @@ if feedbackID=="Beneficiary":
     else:
         st.header("Data Preview")
         st.write(st.session_state.beneficiary_file_name)
-        st.dataframe(st.session_state.beneficiary_df, hide_index=True)
+        st.dataframe(st.session_state.beneficiary_df)
         st.write("Number of reviews: ", st.session_state.beneficiary_df.shape[0])
            
 elif feedbackID=="Volunteer":
@@ -84,7 +84,7 @@ elif feedbackID=="Volunteer":
     else:
         st.header("Data Preview")
         st.write(st.session_state.volunteer_file_name)
-        st.dataframe(st.session_state.volunteer_df, hide_index=True)
+        st.dataframe(st.session_state.volunteer_df)
         st.write("Number of reviews: ", st.session_state.volunteer_df.shape[0])
 
 
