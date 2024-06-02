@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from streamlit_card import card
 import hydralit_components as hc
 
 st.set_page_config(page_title = 'Beneficiary Feedback', 
