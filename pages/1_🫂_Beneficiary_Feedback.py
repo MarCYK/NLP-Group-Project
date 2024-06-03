@@ -8,6 +8,14 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from torch.utils.data import DataLoader
 from datasets import Dataset
 from safetensors.torch import load_model
+from wordcloud import WordCloud, STOPWORDS
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.tag import pos_tag
+import matplotlib.pyplot as plt
+import re
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
 
 st.set_page_config(page_title = 'Beneficiary Feedback', 
     layout='wide',
@@ -211,3 +219,26 @@ with first_chart:
 with second_chart:
     chart_data = pd.DataFrame(np.random.randn(2000, 3),columns=['a', 'b', 'c'])
     st.line_chart(chart_data)
+
+# Word Cloud
+st.markdown("<hr/>", unsafe_allow_html=True)
+
+st.markdown("## Word Cloud")
+st.markdown("What the beneficiaries are saying about the program...")
+
+text = ' '.join(beneficiary_results_df['Review'].astype(str))
+custom_stopwords = set(STOPWORDS)
+custom_stopwords.update(["Smart Tutor Program", "program", "Kompleks Perdana Siswa", "Dato Kamaruddin Mosque", "Universiti Malaya", "Dato Kamaruddin", "Smart Tutor", "Smart", "Tutor", "overall", "Soft"])
+text = re.sub(r'\b\d+\b', '', text)
+
+tokens = word_tokenize(text)
+tagged_tokens = pos_tag(tokens)
+adjectives = [word for word, pos in tagged_tokens if pos in ['JJ', 'JJR', 'JJS'] and word.lower() not in custom_stopwords]
+filtered_text = ' '.join(adjectives)
+
+wordcloud = WordCloud(stopwords=custom_stopwords, background_color='white', width=800, height=400).generate(filtered_text)
+fig = plt.figure(figsize=(10, 5))
+ax = plt.imshow(wordcloud, interpolation='bilinear')
+plt.axis('off')
+plt.show()
+st.pyplot(fig)
