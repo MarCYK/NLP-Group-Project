@@ -20,6 +20,10 @@ if 'beneficiary_df' not in st.session_state:
     st.session_state.beneficiary_df = pd.DataFrame()
 if 'volunteer_df' not in st.session_state:
     st.session_state.volunteer_df = pd.DataFrame()
+if "beneficiary_results_df" not in st.session_state:
+    st.session_state.beneficiary_results_df = pd.DataFrame()
+if "volunteer_results_df" not in st.session_state:
+    st.session_state.volunteer_results_df = pd.DataFrame()
 
 # Customize page title
 st.title("Upload Feedback Data")
@@ -49,6 +53,7 @@ if feedbackID=="Beneficiary":
         beneficiary_df = beneficiary_temp[(beneficiary_temp['Review'].notnull()) & (beneficiary_temp['Review'] != "")].reset_index(drop=True)
         st.session_state.beneficiary_df = beneficiary_df
         st.session_state.beneficiary_file_name = beneficiary_file_name
+        st.session_state.beneficiary_results_df = pd.DataFrame() # Reset Prediction Results
 
     # To-do: Drop Rating & Category column, they are for training only
 
@@ -77,6 +82,7 @@ elif feedbackID=="Volunteer":
         volunteer_df = volunteer_temp[volunteer_temp['Review'].notnull()].reset_index(drop=True)    
         st.session_state.volunteer_df = volunteer_df
         st.session_state.volunteer_file_name = volunteer_file_name
+        st.session_state.volunteer_results_df = pd.DataFrame() # Reset Prediction Results
 
     # Display the uploaded file
     if st.session_state.volunteer_df.empty:

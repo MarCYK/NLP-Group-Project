@@ -13,11 +13,18 @@ st.set_page_config(page_title = 'Beneficiary Feedback',
     layout='wide',
     page_icon='🫂')
 
+st.title("Beneficiary Feedback")
+
+# Initialize session state
+if "beneficiary_results_df" not in st.session_state:
+    st.session_state.beneficiary_results_df = pd.DataFrame()
+if not st.session_state.beneficiary_results_df.empty:
+    st.write("Beneficiary results loaded")
+
 if st.session_state.beneficiary_df.empty:
     st.write("Please upload a file to get started.")
 
-st.title("Beneficiary Feedback")
-
+# Training the model stuff
 # Streamlit sharing is CPU only
 device = torch.device('cpu')
 
@@ -92,36 +99,46 @@ def make_predictions(model, dataloader, device):
                 logits = outputs.logits
                 predictions.extend(torch.argmax(logits, dim=-1).tolist())
                 # Update the placeholder text
-                progress_text.text(f'{len(predictions)}\{len(df)}')
+                progress_text.text(f'{len(predictions)}\{st.session_state.beneficiary_df.shape[0]} reviews processed')
 
 
     return predictions
 
-# Load the model and tokenizer
-tokenizer, model = install_model()
 
-df = st.session_state.beneficiary_df
+beneficiary_results_df = st.session_state.beneficiary_results_df
 
-df = prepare_dataset(df, tokenizer)
+f_checkpoint = Path("model/model.safetensors")
+        
+if not f_checkpoint.exists(): #To avoid breaking the code when changing page while installing
+    # Load the model and tokenizer
+    tokenizer, model = install_model()
+elif beneficiary_results_df.empty:
+    tokenizer, model = install_model()
 
-predictions = make_predictions(model, df, device)
+    df = st.session_state.beneficiary_df
 
-results_df = pd.DataFrame({
-    'Review': st.session_state.beneficiary_df['Review'],
-    'Predicted Sentiment': [pred + 1 for pred in predictions]  # Adjust label scale if necessary
-})
-st.session_state.beneficiary_results_df = results_df
-st.dataframe(results_df)
+    df = prepare_dataset(df, tokenizer)
+
+    predictions = make_predictions(model, df, device)
+
+    beneficiary_results_df = pd.DataFrame({
+        'Review': st.session_state.beneficiary_df['Review'],
+        'Predicted Sentiment': [pred + 1 for pred in predictions]  # Adjust label scale if necessary
+    })
+    st.session_state.beneficiary_results_df = beneficiary_results_df
 
 
-
-
-
+# Data visualization
 #can apply customisation to almost all the properties of the card, including the progress bar
 theme_bad = {'bgcolor': '#FFF0F0','title_color': 'red','content_color': 'red','icon_color': 'red', 'icon': 'fa fa-thumbs-down', 'progress_color': 'red'}
 theme_neutral = {'bgcolor': '#FFF4EF','title_color': 'orange','content_color': 'orange','icon_color': 'orange', 'icon': 'fa fa-question-circle', 'progress_color': 'orange'}
 theme_good = {'bgcolor': '#EFF8F7','title_color': 'green','content_color': 'green','icon_color': 'green', 'icon': 'fa fa-thumbs-up', 'progress_color': 'green'}
 theme_review = {'bgcolor': '#FFFFFF','title_color': 'black','content_color': 'black','icon_color': 'black', 'icon': 'fa fa-envelope-open-text', 'progress_color': 'black'}
+
+# Review Category
+Positive = beneficiary_results_df[beneficiary_results_df['Predicted Sentiment'] >= 4]
+Neutral = beneficiary_results_df[beneficiary_results_df['Predicted Sentiment'] == 3]
+Negative = beneficiary_results_df[beneficiary_results_df['Predicted Sentiment'] <= 2]
 
 ### top row 
 first_kpi, second_kpi, third_kpi, fourth_kpi = st.columns(4)
@@ -136,7 +153,7 @@ with first_kpi:
                  icon_size='30px')
 
 with second_kpi:
-    number2 = 222 
+    number2 = Positive.shape[0]
     sum2 = number2/number1 * 100
     hc.info_card(title='Number of Positive Reviews', 
                  content=number2.__str__(), 
@@ -146,7 +163,7 @@ with second_kpi:
                  icon_size='30px',)
 
 with third_kpi:
-    number3 = 333
+    number3 = Neutral.shape[0]
     sum3 = number3/number1 * 100
     hc.info_card(title='Number of Neutral Reviews', 
                 content=number3.__str__(), 
@@ -156,7 +173,7 @@ with third_kpi:
                 icon_size='30px',)
 
 with fourth_kpi:
-    number3 = 333
+    number3 = Negative.shape[0]
     sum3 = number3/number1 * 100
     hc.info_card(title='Number of Negative Reviews', 
                 content=number3.__str__(), 

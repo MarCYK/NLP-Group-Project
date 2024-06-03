@@ -73,7 +73,7 @@ if df is not None:
     if 'Predicted Sentiment' not in df.columns:
         st.error("The 'Predicted Sentiment' column is missing from the DataFrame after preprocessing.")
     else:
-        st.write(df.head())
+        st.write(df)
 
         # sentiment = st.selectbox("Select sentiment", ("Positive", "Neutral", "Negative"))
         # sentiment_mapping = {
