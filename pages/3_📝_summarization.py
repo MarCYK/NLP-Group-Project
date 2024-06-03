@@ -1,10 +1,33 @@
 import streamlit as st
 import pandas as pd
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from openai import OpenAI
 
 st.set_page_config(page_title='Summarization', 
                    layout='wide',
                    page_icon='📝')
+
+# Customize the sidebar
+markdown = """
+This is a Streamlit app for analyzing feedback data from beneficiaries and volunteers.
+
+&nbsp;
+&nbsp;
+
+Source code:
+https://github.com/MarCYK/NLP-Group-Project
+
+&nbsp;
+&nbsp;
+
+In collaboration with:
+SEKRETARIAT SUKARELAWAN UNIVERSITI MALAYA (SEKRUM)
+"""
+
+st.sidebar.title("About")
+logo = "images\SEKRUM Logo.jpg"
+st.sidebar.info(markdown)
+st.sidebar.image(logo)
 
 # Initialize session state for dataframes if not already initialized
 if 'beneficiary_df' not in st.session_state:
@@ -181,3 +204,32 @@ if df is not None:
         with st.spinner("Reading Reviews... Generating Summary... This may take awhile!"):
             summaries = summarize_text(combined_reviews)
         st.write(summaries)
+
+
+# Suggestion - Open-AI Witchcraft
+
+# Word Cloud
+st.markdown("<hr/>", unsafe_allow_html=True)
+
+st.markdown("## Suggestion")
+st.markdown("How can you improve the program from the feedback received...")
+
+client = OpenAI(
+    # Disable when not in use cause we poor asf
+    # api_key = "sk-proj-NxBoJTkA7Aiq21YMHuJ4T3BlbkFJiGAKvqiWgCSkIBnL603B"
+)
+
+with st.spinner("Generating Suggestion... This may take awhile!"):
+    # Define the prompt for suggestions
+    prompt = f"Here are some negative reviews:\n\n{summaries}\n\nBased on these reviews, how can we improve the project?" 
+
+    completion = client.chat.completions.create(
+        model = "gpt-3.5-turbo",
+        messages=[
+            {"role" : "system", "content" : "You are a program advisor that looks for improvements for programs"},
+            {"role" : "user", "content" : prompt}
+
+        ]
+    )
+    suggestions = completion.choices[0].message.content
+st.write(suggestions)

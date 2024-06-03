@@ -21,6 +21,28 @@ st.set_page_config(page_title = 'Volunteer Feedback',
     layout='wide',
     page_icon='👷')
 
+# Customize the sidebar
+markdown = """
+This is a Streamlit app for analyzing feedback data from beneficiaries and volunteers.
+
+&nbsp;
+&nbsp;
+
+Source code:
+https://github.com/MarCYK/NLP-Group-Project
+
+&nbsp;
+&nbsp;
+
+In collaboration with:
+SEKRETARIAT SUKARELAWAN UNIVERSITI MALAYA (SEKRUM)
+"""
+
+st.sidebar.title("About")
+logo = "images\SEKRUM Logo.jpg"
+st.sidebar.info(markdown)
+st.sidebar.image(logo)
+
 st.title("Volunteer Feedback")
 
 # Initialize session state

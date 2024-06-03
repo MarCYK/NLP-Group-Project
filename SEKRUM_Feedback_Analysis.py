@@ -7,12 +7,24 @@ st.set_page_config(page_title="SEKRUM Feedback Analysis", page_icon=":earth_asia
 
 # Customize the sidebar
 markdown = """
-Insert Project Description Here
+This is a Streamlit app for analyzing feedback data from beneficiaries and volunteers.
+
+&nbsp;
+&nbsp;
+
+Source code:
+https://github.com/MarCYK/NLP-Group-Project
+
+&nbsp;
+&nbsp;
+
+In collaboration with:
+SEKRETARIAT SUKARELAWAN UNIVERSITI MALAYA (SEKRUM)
 """
 
 st.sidebar.title("About")
-st.sidebar.info(markdown)
 logo = "images\SEKRUM Logo.jpg"
+st.sidebar.info(markdown)
 st.sidebar.image(logo)
 
 # Initialize session state
