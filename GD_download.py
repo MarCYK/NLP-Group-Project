@@ -1,5 +1,6 @@
-#taken from this StackOverflow answer: https://stackoverflow.com/a/39225039
-import requests
+# taken from this StackOverflow answer: https://stackoverflow.com/a/39225039
+import requests  # type: ignore
+
 
 def download_file_from_google_drive(id, destination):
     def get_confirm_token(response):
@@ -14,19 +15,19 @@ def download_file_from_google_drive(id, destination):
 
         with open(destination, "wb") as f:
             for chunk in response.iter_content(CHUNK_SIZE):
-                if chunk: # filter out keep-alive new chunks
+                if chunk:  # filter out keep-alive new chunks
                     f.write(chunk)
 
-    #URL = "https://drive.usercontent.google.com/download?id=[INSERT FILE ID]&export=download&confirm=t"
+    # URL = "https://drive.usercontent.google.com/download?id=[INSERT FILE ID]&export=download&confirm=t"
     URL = "https://drive.usercontent.google.com/download?id=1_Y49A4LAKog2Jr4TXRVhFUUw8vX4HcX9&export=download&confirm=t"
 
     session = requests.Session()
 
-    response = session.get(URL, params = { 'id' : id }, stream = True)
+    response = session.get(URL, params={'id': id}, stream=True)
     token = get_confirm_token(response)
 
     if token:
-        params = { 'id' : id, 'confirm' : token }
-        response = session.get(URL, params = params, stream = True)
+        params = {'id': id, 'confirm': token}
+        response = session.get(URL, params=params, stream=True)
 
-    save_response_content(response, destination)  
+    save_response_content(response, destination)

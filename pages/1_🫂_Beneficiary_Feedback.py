@@ -19,9 +19,9 @@ from collections import Counter
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 
-st.set_page_config(page_title = 'Beneficiary Feedback', 
-    layout='wide',
-    page_icon='🫂')
+st.set_page_config(page_title='Beneficiary Feedback',
+                   layout='wide',
+                   page_icon='🫂')
 
 # Customize the sidebar
 markdown = """
@@ -64,6 +64,7 @@ device = torch.device('cpu')
 # https://drive.google.com/file/d/1-8Od2aCrZ2vGMHA5wScJapXrgJcvYO_C/view?usp=sharing
 cloud_model_location = "1-8Od2aCrZ2vGMHA5wScJapXrgJcvYO_C"
 
+
 def install_model():
     # # Load the original model with 3 labels
     # original_model_name = "lxyuan/distilbert-base-multilingual-cased-sentiments-student"
@@ -89,18 +90,19 @@ def install_model():
 
     save_dest = Path('model')
     save_dest.mkdir(exist_ok=True)
-    
+
     f_checkpoint = Path("model/model.safetensors")
-        
+
     if not f_checkpoint.exists():
         with st.spinner("Downloading model... this may take awhile! \n Don't stop it!"):
             from GD_download import download_file_from_google_drive
             download_file_from_google_drive(cloud_model_location, f_checkpoint)
             print("Download complete!")
-    
+
     model_name = "lxyuan/distilbert-base-multilingual-cased-sentiments-student"
     # model_name = "path/to/modified_model"
-    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=5, ignore_mismatched_sizes=True)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        model_name, num_labels=5, ignore_mismatched_sizes=True)
 
     load_model(model, "model/model.safetensors")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -108,14 +110,19 @@ def install_model():
     return tokenizer, model
 
 # Define a function to prepare the dataset
+
+
 def prepare_dataset(dataframe, tokenizer, batch_size=8):
     dataset = Dataset.from_pandas(dataframe)
-    dataset = dataset.map(tokenizer, input_columns="Review", fn_kwargs={"padding": "max_length", "truncation": True, "max_length": 512})
+    dataset = dataset.map(tokenizer, input_columns="Review", fn_kwargs={
+                          "padding": "max_length", "truncation": True, "max_length": 512})
     dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
     dataloader = DataLoader(dataset, batch_size=batch_size)
     return dataloader
 
 # Define a function to make predictions
+
+
 def make_predictions(model, dataloader, device):
     model.to(device)
     model.eval()
@@ -131,8 +138,8 @@ def make_predictions(model, dataloader, device):
                 logits = outputs.logits
                 predictions.extend(torch.argmax(logits, dim=-1).tolist())
                 # Update the placeholder text
-                progress_text.text(f'{len(predictions)}\{st.session_state.beneficiary_df.shape[0]} reviews processed')
-
+                progress_text.text(
+                    f'{len(predictions)}\{st.session_state.beneficiary_df.shape[0]} reviews processed')
 
     return predictions
 
@@ -140,8 +147,8 @@ def make_predictions(model, dataloader, device):
 beneficiary_results_df = st.session_state.beneficiary_results_df
 
 f_checkpoint = Path("model/model.safetensors")
-        
-if not f_checkpoint.exists(): #To avoid breaking the code when changing page while installing
+
+if not f_checkpoint.exists():  # To avoid breaking the code when changing page while installing
     # Load the model and tokenizer
     tokenizer, model = install_model()
 elif beneficiary_results_df.empty:
@@ -155,30 +162,35 @@ elif beneficiary_results_df.empty:
 
     beneficiary_results_df = pd.DataFrame({
         'Review': st.session_state.beneficiary_df['Review'],
-        'Predicted Sentiment': [pred + 1 for pred in predictions]  # Adjust label scale if necessary
+        # Adjust label scale if necessary
+        'Predicted Sentiment': [pred + 1 for pred in predictions]
     })
     st.session_state.beneficiary_results_df = beneficiary_results_df
 
 
 # Data visualization
-#can apply customisation to almost all the properties of the card, including the progress bar
-theme_bad = {'bgcolor': '#FFF0F0','title_color': 'red','content_color': 'red','icon_color': 'red', 'icon': 'fa fa-thumbs-down', 'progress_color': 'red'}
-theme_neutral = {'bgcolor': '#FFF4EF','title_color': 'orange','content_color': 'orange','icon_color': 'orange', 'icon': 'fa fa-question-circle', 'progress_color': 'orange'}
-theme_good = {'bgcolor': '#EFF8F7','title_color': 'green','content_color': 'green','icon_color': 'green', 'icon': 'fa fa-thumbs-up', 'progress_color': 'green'}
-theme_review = {'bgcolor': '#FFFFFF','title_color': 'black','content_color': 'black','icon_color': 'black', 'icon': 'fa fa-envelope-open-text', 'progress_color': 'black'}
+# can apply customisation to almost all the properties of the card, including the progress bar
+theme_bad = {'bgcolor': '#FFF0F0', 'title_color': 'red', 'content_color': 'red',
+             'icon_color': 'red', 'icon': 'fa fa-thumbs-down', 'progress_color': 'red'}
+theme_neutral = {'bgcolor': '#FFF4EF', 'title_color': 'orange', 'content_color': 'orange',
+                 'icon_color': 'orange', 'icon': 'fa fa-question-circle', 'progress_color': 'orange'}
+theme_good = {'bgcolor': '#EFF8F7', 'title_color': 'green', 'content_color': 'green',
+              'icon_color': 'green', 'icon': 'fa fa-thumbs-up', 'progress_color': 'green'}
+theme_review = {'bgcolor': '#FFFFFF', 'title_color': 'black', 'content_color': 'black',
+                'icon_color': 'black', 'icon': 'fa fa-envelope-open-text', 'progress_color': 'black'}
 
 # Review Category
 Positive = beneficiary_results_df[beneficiary_results_df['Predicted Sentiment'] >= 4]
 Neutral = beneficiary_results_df[beneficiary_results_df['Predicted Sentiment'] == 3]
 Negative = beneficiary_results_df[beneficiary_results_df['Predicted Sentiment'] <= 2]
 
-### top row 
+# top row
 first_kpi, second_kpi, third_kpi, fourth_kpi = st.columns(4)
 
 with first_kpi:
     number1 = st.session_state.beneficiary_df['Review'].count()
-    hc.info_card(title='Number of Reviews', 
-                 content=number1.__str__(), 
+    hc.info_card(title='Number of Reviews',
+                 content=number1.__str__(),
                  bar_value=number1.__str__(),
                  theme_override=theme_review,
                  title_text_size='20px',
@@ -187,9 +199,9 @@ with first_kpi:
 with second_kpi:
     number2 = Positive.shape[0]
     sum2 = number2/number1 * 100
-    hc.info_card(title='Number of Positive Reviews', 
-                 content=number2.__str__(), 
-                 bar_value= sum2,
+    hc.info_card(title='Number of Positive Reviews',
+                 content=number2.__str__(),
+                 bar_value=sum2,
                  theme_override=theme_good,
                  title_text_size='20px',
                  icon_size='30px',)
@@ -197,22 +209,22 @@ with second_kpi:
 with third_kpi:
     number3 = Neutral.shape[0]
     sum3 = number3/number1 * 100
-    hc.info_card(title='Number of Neutral Reviews', 
-                content=number3.__str__(), 
-                bar_value=sum3,
-                theme_override=theme_neutral,
-                title_text_size='20px',
-                icon_size='30px',)
+    hc.info_card(title='Number of Neutral Reviews',
+                 content=number3.__str__(),
+                 bar_value=sum3,
+                 theme_override=theme_neutral,
+                 title_text_size='20px',
+                 icon_size='30px',)
 
 with fourth_kpi:
     number3 = Negative.shape[0]
     sum3 = number3/number1 * 100
-    hc.info_card(title='Number of Negative Reviews', 
-                content=number3.__str__(), 
-                bar_value=sum3,
-                theme_override=theme_bad,
-                title_text_size='20px',
-                icon_size='30px',)
+    hc.info_card(title='Number of Negative Reviews',
+                 content=number3.__str__(),
+                 bar_value=sum3,
+                 theme_override=theme_bad,
+                 title_text_size='20px',
+                 icon_size='30px',)
 
 st.markdown("<hr/>", unsafe_allow_html=True)
 
@@ -221,10 +233,24 @@ st.markdown("## Chart Section")
 
 first_chart, second_chart = st.columns(2)
 
+# with first_chart:
+#     # Sentiment Distribution
+#     fig1 = plt.figure(figsize=(10, 6))
+#     beneficiary_results_df['Predicted Sentiment'].value_counts().plot(
+#         kind='bar', color='skyblue')
+#     plt.title('Sentiment Distribution of Beneficiaries by Count')
+#     plt.xlabel('Predicted Sentiment')
+#     plt.ylabel('Count')
+#     plt.xticks(rotation=45)
+#     st.pyplot(fig1)
+
 with first_chart:
     # Sentiment Distribution
     fig1 = plt.figure(figsize=(10, 6))
-    beneficiary_results_df['Predicted Sentiment'].value_counts().plot(kind='bar', color='skyblue')
+    sentiment_order = sorted(
+        beneficiary_results_df['Predicted Sentiment'].unique())
+    beneficiary_results_df['Predicted Sentiment'].value_counts(
+    ).loc[sentiment_order].plot(kind='bar', color='skyblue')
     plt.title('Sentiment Distribution of Beneficiaries by Count')
     plt.xlabel('Predicted Sentiment')
     plt.ylabel('Count')
@@ -243,17 +269,20 @@ with second_chart:
     # st.pyplot(fig2)
 
     # Extract relevant data from df_new2
-    sentiment_counts = beneficiary_results_df['Predicted Sentiment'].value_counts()
+    sentiment_counts = beneficiary_results_df['Predicted Sentiment'].value_counts(
+    )
     total_reviews = len(beneficiary_results_df)
 
     # Define gauge chart parameters
-    gauge_labels = ['Extremely Negative', 'Negative', 'Neutral', 'Positive', 'Extremely Positive']
+    gauge_labels = ['Extremely Negative', 'Negative',
+                    'Neutral', 'Positive', 'Extremely Positive']
     gauge_colors = ['#FF0000', '#FF7700', '#FFFF00', '#90EE90', '#008000']
 
     # Create the gauge chart
     fig2, ax2 = plt.subplots()
     # Create the pie chart
-    ax2.pie(sentiment_counts, labels=gauge_labels, autopct='%1.1f%%', colors=gauge_colors, startangle=90)
+    ax2.pie(sentiment_counts, labels=gauge_labels,
+            autopct='%1.1f%%', colors=gauge_colors, startangle=90)
     # Add the title
     ax2.set_title('Sentiment Distribution of Beneficiaries by Percentage')
     # Add the center circle
@@ -271,7 +300,8 @@ first_chart, second_chart = st.columns(2)
 
 with first_chart:
     # Review Length Distribution
-    review_lengths = [len(review.split()) for review in beneficiary_results_df['Review'].tolist()]
+    review_lengths = [len(review.split())
+                      for review in beneficiary_results_df['Review'].tolist()]
 
     fig3 = plt.figure(figsize=(10, 5))
     sns.histplot(review_lengths, bins=20, kde=True)
@@ -279,7 +309,7 @@ with first_chart:
     plt.xlabel('Number of Words')
     plt.ylabel('Frequency')
     st.pyplot(fig3)
-    
+
     # def get_bigrams(tokens):
     #     return list(zip(tokens, tokens[1:]))
 
@@ -293,7 +323,7 @@ with first_chart:
     #     tokens = re.findall(r'\b\w+\b', combined_text.lower())
     #     tokens = [word for word in tokens if word not in custom_stopwords]
     #     return tokens
-    
+
     # tokens = preprocess_reviews_simple(beneficiary_results_df)
 
     # bigrams = get_bigrams(tokens)
@@ -317,27 +347,30 @@ with second_chart:
         return list(zip(tokens, tokens[1:]))
 
     def get_adjectives(tokens):
-        adjectives = [word for word in tokens if word.endswith('y') or word.endswith('ive')]
+        adjectives = [word for word in tokens if word.endswith(
+            'y') or word.endswith('ive')]
         return adjectives
-    
+
     # Preprocess the data without nltk
     def preprocess_reviews_simple(df):
         reviews = df['Review'].tolist()
         combined_text = ' '.join(reviews)
         custom_stopwords = set(STOPWORDS)
-        custom_stopwords.update(["Smart Tutor Program", "program", "Kompleks Perdana Siswa", "Dato Kamaruddin Mosque", "Universiti Malaya", "Dato Kamaruddin", "Smart Tutor", "Smart", "Tutor", "overall", "soft"])
+        custom_stopwords.update(["Smart Tutor Program", "program", "Kompleks Perdana Siswa", "Dato Kamaruddin Mosque",
+                                "Universiti Malaya", "Dato Kamaruddin", "Smart Tutor", "Smart", "Tutor", "overall", "soft"])
         combined_text = re.sub(r'\b\d+\b', '', combined_text)  # Remove numbers
         tokens = re.findall(r'\b\w+\b', combined_text.lower())
         tokens = [word for word in tokens if word not in custom_stopwords]
         return tokens
 
     tokens = preprocess_reviews_simple(beneficiary_results_df)
-    
+
     adjectives = get_adjectives(tokens)
     adj_freq = Counter(adjectives)
     common_adjectives = adj_freq.most_common(10)
 
-    adj_df = pd.DataFrame(common_adjectives, columns=['Adjective', 'Frequency'])
+    adj_df = pd.DataFrame(common_adjectives, columns=[
+                          'Adjective', 'Frequency'])
 
     fig4 = plt.figure(figsize=(10, 5))
     sns.barplot(x='Frequency', y='Adjective', data=adj_df)
@@ -354,15 +387,18 @@ st.markdown("What the beneficiaries are saying about the program...")
 
 text = ' '.join(beneficiary_results_df['Review'].astype(str))
 custom_stopwords = set(STOPWORDS)
-custom_stopwords.update(["Smart Tutor Program", "program", "Kompleks Perdana Siswa", "Dato Kamaruddin Mosque", "Universiti Malaya", "Dato Kamaruddin", "Smart Tutor", "Smart", "Tutor", "overall", "Soft"])
+custom_stopwords.update(["Smart Tutor Program", "program", "Kompleks Perdana Siswa", "Dato Kamaruddin Mosque",
+                        "Universiti Malaya", "Dato Kamaruddin", "Smart Tutor", "Smart", "Tutor", "overall", "Soft"])
 text = re.sub(r'\b\d+\b', '', text)
 
 tokens = word_tokenize(text)
 tagged_tokens = pos_tag(tokens)
-adjectives = [word for word, pos in tagged_tokens if pos in ['JJ', 'JJR', 'JJS'] and word.lower() not in custom_stopwords]
+adjectives = [word for word, pos in tagged_tokens if pos in [
+    'JJ', 'JJR', 'JJS'] and word.lower() not in custom_stopwords]
 filtered_text = ' '.join(adjectives)
 
-wordcloud = WordCloud(stopwords=custom_stopwords, background_color='white', width=800, height=400).generate(filtered_text)
+wordcloud = WordCloud(stopwords=custom_stopwords, background_color='white',
+                      width=800, height=400).generate(filtered_text)
 fig = plt.figure(figsize=(10, 5))
 ax = plt.imshow(wordcloud, interpolation='bilinear')
 plt.axis('off')

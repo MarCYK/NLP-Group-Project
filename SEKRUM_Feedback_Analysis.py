@@ -1,9 +1,10 @@
-import streamlit as st
-import pandas as pd
+import streamlit as st # type: ignore
+import pandas as pd # type: ignore
 
 # To find emoji: https://emojipedia.org
 
-st.set_page_config(page_title="SEKRUM Feedback Analysis", page_icon=":earth_asia:", layout="wide")
+st.set_page_config(page_title="SEKRUM Feedback Analysis",
+                   page_icon=":earth_asia:", layout="wide")
 
 # Customize the sidebar
 markdown = """
@@ -45,15 +46,15 @@ st.title("Upload Feedback Data")
 #     """
 # )
 
-feedbackID=st.radio("Choose the Feedback type",
-                    ("Beneficiary","Volunteer"), 
-                    horizontal=True)
+feedbackID = st.radio("Choose the Feedback type",
+                      ("Beneficiary", "Volunteer"),
+                      horizontal=True)
 
-if feedbackID=="Beneficiary":
+if feedbackID == "Beneficiary":
     st.header("Beneficiary Feedback")
     beneficiary_file = st.file_uploader("Choose a CSV file",
-                                         type="csv",
-                                         key="1")
+                                        type="csv",
+                                        key="1")
     if beneficiary_file:
         try:
             beneficiary_temp = pd.read_csv(beneficiary_file)
@@ -61,11 +62,12 @@ if feedbackID=="Beneficiary":
             st.success("File uploaded successfully.")
         except:
             st.error("File upload failed. Please upload a CSV file.")
-        
-        beneficiary_df = beneficiary_temp[(beneficiary_temp['Review'].notnull()) & (beneficiary_temp['Review'] != "")].reset_index(drop=True)
+
+        beneficiary_df = beneficiary_temp[(beneficiary_temp['Review'].notnull()) & (
+            beneficiary_temp['Review'] != "")].reset_index(drop=True)
         st.session_state.beneficiary_df = beneficiary_df
         st.session_state.beneficiary_file_name = beneficiary_file_name
-        st.session_state.beneficiary_results_df = pd.DataFrame() # Reset Prediction Results
+        st.session_state.beneficiary_results_df = pd.DataFrame()  # Reset Prediction Results
 
     # To-do: Drop Rating & Category column, they are for training only
 
@@ -76,9 +78,10 @@ if feedbackID=="Beneficiary":
         st.header("Data Preview")
         st.write(st.session_state.beneficiary_file_name)
         st.dataframe(st.session_state.beneficiary_df)
-        st.write("Number of reviews: ", st.session_state.beneficiary_df.shape[0])
-           
-elif feedbackID=="Volunteer":
+        st.write("Number of reviews: ",
+                 st.session_state.beneficiary_df.shape[0])
+
+elif feedbackID == "Volunteer":
     st.header("Volunteer Feedback")
     volunteer_file = st.file_uploader("Choose a CSV file",
                                       type="csv",
@@ -90,11 +93,12 @@ elif feedbackID=="Volunteer":
             st.success("File uploaded successfully.")
         except:
             st.error("File upload failed. Please upload a CSV file.")
-        
-        volunteer_df = volunteer_temp[volunteer_temp['Review'].notnull()].reset_index(drop=True)    
+
+        volunteer_df = volunteer_temp[volunteer_temp['Review'].notnull()].reset_index(
+            drop=True)
         st.session_state.volunteer_df = volunteer_df
         st.session_state.volunteer_file_name = volunteer_file_name
-        st.session_state.volunteer_results_df = pd.DataFrame() # Reset Prediction Results
+        st.session_state.volunteer_results_df = pd.DataFrame()  # Reset Prediction Results
 
     # Display the uploaded file
     if st.session_state.volunteer_df.empty:
