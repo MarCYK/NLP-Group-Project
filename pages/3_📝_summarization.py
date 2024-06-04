@@ -191,10 +191,12 @@ if df is not None:
         # The new model seems to predict negative feedback as "Neutral", so even when choosing
         # "Neutral" sentiment to be summarized, it will still say like "The program suck facking ass" (rather than before it's more like "It's decent ig")
         # The lazy fix is just make two sentiment to be summarized; "Positive", "Negative"
+        # sentiment = st.selectbox("Select sentiment", ("Positive","Neutral", "Negative"))
         sentiment = st.selectbox("Select sentiment", ("Positive", "Negative"))
         sentiment_mapping = {
-            "Positive": [4, 3],
-            "Negative": [2, 1, 0]
+            "Positive": [4],
+            # "Neutral": [3],
+            "Negative": [3, 2, 1, 0]
         }
 
         filtered_df = df[df['Predicted Sentiment'].isin(sentiment_mapping[sentiment])]
