@@ -207,8 +207,6 @@ if df is not None:
 
 
 # Suggestion - Open-AI Witchcraft
-
-# Word Cloud
 st.markdown("<hr/>", unsafe_allow_html=True)
 
 st.markdown("## Suggestion")

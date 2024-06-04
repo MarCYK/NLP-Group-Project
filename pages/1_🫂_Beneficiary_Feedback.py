@@ -14,6 +14,8 @@ from nltk.tokenize import word_tokenize
 from nltk.tag import pos_tag
 import matplotlib.pyplot as plt
 import re
+import seaborn as sns
+from collections import Counter
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 
@@ -215,32 +217,134 @@ with fourth_kpi:
 st.markdown("<hr/>", unsafe_allow_html=True)
 
 
-st.markdown("## Chart Section: 1")
+st.markdown("## Chart Section")
 
 first_chart, second_chart = st.columns(2)
 
-
 with first_chart:
-    chart_data = pd.DataFrame(np.random.randn(20, 3),columns=['a', 'b', 'c'])
-    st.line_chart(chart_data)
+    # Sentiment Distribution
+    fig1 = plt.figure(figsize=(10, 6))
+    beneficiary_results_df['Predicted Sentiment'].value_counts().plot(kind='bar', color='skyblue')
+    plt.title('Sentiment Distribution of Beneficiaries by Count')
+    plt.xlabel('Predicted Sentiment')
+    plt.ylabel('Count')
+    plt.xticks(rotation=45)
+    st.pyplot(fig1)
 
 with second_chart:
-    chart_data = pd.DataFrame(np.random.randn(20, 3),columns=['a', 'b', 'c'])
-    st.line_chart(chart_data)
+    # sentiment_counts = beneficiary_results_df['Predicted Sentiment'].value_counts()
+    # # Create the chart
+    # fig2 = plt.figure(figsize=(8, 6))
+    # plt.pie(sentiment_counts, labels=sentiment_counts.index, autopct='%1.1f%%', colors=['gold', 'lightblue', 'lightcoral', 'lightgreen', 'purple'])
+    # plt.title('Sentiment Distribution of Beneficiaries')
+    # plt.axis('equal')  # Equal aspect ratio for a circular pie chart
+    # # Optional: Add labels outside the pie chart
+    # plt.legend(sentiment_counts.index, loc='upper left', bbox_to_anchor=(1, 1.02))
+    # st.pyplot(fig2)
 
+    # Extract relevant data from df_new2
+    sentiment_counts = beneficiary_results_df['Predicted Sentiment'].value_counts()
+    total_reviews = len(beneficiary_results_df)
 
-st.markdown("## Chart Section: 2")
+    # Define gauge chart parameters
+    gauge_labels = ['Extremely Negative', 'Negative', 'Neutral', 'Positive', 'Extremely Positive']
+    gauge_colors = ['#FF0000', '#FF7700', '#FFFF00', '#90EE90', '#008000']
+
+    # Create the gauge chart
+    fig2, ax2 = plt.subplots()
+    # Create the pie chart
+    ax2.pie(sentiment_counts, labels=gauge_labels, autopct='%1.1f%%', colors=gauge_colors, startangle=90)
+    # Add the title
+    ax2.set_title('Sentiment Distribution of Beneficiaries by Percentage')
+    # Add the center circle
+    centre_circle = plt.Circle((0, 0), 0.70, fc='white')
+    fig2.gca().add_artist(centre_circle)
+    # Equal aspect ratio ensures a circular gauge
+    ax2.axis('equal')
+    # Display the chart
+    plt.tight_layout()
+    st.pyplot(fig2, ax2)
+
+# st.markdown("<hr/>", unsafe_allow_html=True)
 
 first_chart, second_chart = st.columns(2)
 
-
 with first_chart:
-    chart_data = pd.DataFrame(np.random.randn(100, 3),columns=['a', 'b', 'c'])
-    st.line_chart(chart_data)
+    # Review Length Distribution
+    review_lengths = [len(review.split()) for review in beneficiary_results_df['Review'].tolist()]
+
+    fig3 = plt.figure(figsize=(10, 5))
+    sns.histplot(review_lengths, bins=20, kde=True)
+    plt.title('Review Length Distribution')
+    plt.xlabel('Number of Words')
+    plt.ylabel('Frequency')
+    st.pyplot(fig3)
+    
+    # def get_bigrams(tokens):
+    #     return list(zip(tokens, tokens[1:]))
+
+    # # Preprocess the data without nltk
+    # def preprocess_reviews_simple(df):
+    #     reviews = df['Review'].tolist()
+    #     combined_text = ' '.join(reviews)
+    #     custom_stopwords = set(STOPWORDS)
+    #     custom_stopwords.update(["Smart Tutor Program", "program", "Kompleks Perdana Siswa", "Dato Kamaruddin Mosque", "Universiti Malaya", "Dato Kamaruddin", "Smart Tutor", "Smart", "Tutor", "overall", "soft"])
+    #     combined_text = re.sub(r'\b\d+\b', '', combined_text)  # Remove numbers
+    #     tokens = re.findall(r'\b\w+\b', combined_text.lower())
+    #     tokens = [word for word in tokens if word not in custom_stopwords]
+    #     return tokens
+    
+    # tokens = preprocess_reviews_simple(beneficiary_results_df)
+
+    # bigrams = get_bigrams(tokens)
+    # bigram_freq = Counter(bigrams)
+    # common_bigrams = bigram_freq.most_common(10)
+
+    # bigram_df = pd.DataFrame(common_bigrams, columns=['Bigram', 'Frequency'])
+    # bigram_df['Bigram'] = bigram_df['Bigram'].apply(lambda x: ' '.join(x))
+
+    # fig3 = plt.figure(figsize=(10, 5))
+    # sns.barplot(x='Frequency', y='Bigram', data=bigram_df)
+    # plt.title('Common Bigrams in Reviews')
+    # plt.xlabel('Frequency')
+    # plt.ylabel('Bigram')
+    # st.pyplot(fig3)
+
 
 with second_chart:
-    chart_data = pd.DataFrame(np.random.randn(2000, 3),columns=['a', 'b', 'c'])
-    st.line_chart(chart_data)
+    # Most Frequent Adjectives
+    def get_bigrams(tokens):
+        return list(zip(tokens, tokens[1:]))
+
+    def get_adjectives(tokens):
+        adjectives = [word for word in tokens if word.endswith('y') or word.endswith('ive')]
+        return adjectives
+    
+    # Preprocess the data without nltk
+    def preprocess_reviews_simple(df):
+        reviews = df['Review'].tolist()
+        combined_text = ' '.join(reviews)
+        custom_stopwords = set(STOPWORDS)
+        custom_stopwords.update(["Smart Tutor Program", "program", "Kompleks Perdana Siswa", "Dato Kamaruddin Mosque", "Universiti Malaya", "Dato Kamaruddin", "Smart Tutor", "Smart", "Tutor", "overall", "soft"])
+        combined_text = re.sub(r'\b\d+\b', '', combined_text)  # Remove numbers
+        tokens = re.findall(r'\b\w+\b', combined_text.lower())
+        tokens = [word for word in tokens if word not in custom_stopwords]
+        return tokens
+
+    tokens = preprocess_reviews_simple(beneficiary_results_df)
+    
+    adjectives = get_adjectives(tokens)
+    adj_freq = Counter(adjectives)
+    common_adjectives = adj_freq.most_common(10)
+
+    adj_df = pd.DataFrame(common_adjectives, columns=['Adjective', 'Frequency'])
+
+    fig4 = plt.figure(figsize=(10, 5))
+    sns.barplot(x='Frequency', y='Adjective', data=adj_df)
+    plt.title('Most Frequent Adjectives in Reviews')
+    plt.xlabel('Frequency')
+    plt.ylabel('Adjective')
+    st.pyplot(fig4)
 
 # Word Cloud
 st.markdown("<hr/>", unsafe_allow_html=True)
@@ -262,5 +366,4 @@ wordcloud = WordCloud(stopwords=custom_stopwords, background_color='white', widt
 fig = plt.figure(figsize=(10, 5))
 ax = plt.imshow(wordcloud, interpolation='bilinear')
 plt.axis('off')
-plt.show()
 st.pyplot(fig)
